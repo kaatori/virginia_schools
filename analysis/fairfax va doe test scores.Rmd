@@ -300,6 +300,44 @@ leaflet(data = ll_df) %>%
 ```
 
 
+### Where are the schools that did not have more than a -5 % change post-pandemic?
+
+```{r}
+# filtering out schools that decreased in test score more than 5 % post-pandemic
+ll_df %>% 
+  filter(pct_change>=-5) -> top_ll_df # 61 rows
+
+# showing top 5 schools per test subject
+# note: only 4 show up for math
+top_ll_df %>% 
+  arrange(-pct_change) %>% 
+  summarise(`Sch Name`, Test, pct_change) %>% 
+  group_by(Test) %>% 
+  slice_max(pct_change, n=5)
+```
+
+# Revised Map of Schools 
+
+Goal: To see where the top performers are located in terms of district area within Fairfax County
+```{r}
+library(leaflet)
+
+leaflet(data = top_ll_df) %>% 
+  addTiles() %>% 
+  setView(lng = -77.20, lat = 38.85, zoom = 10) %>% 
+  addCircleMarkers(lng = top_ll_df$longtitude, 
+                   lat = top_ll_df$latitude , 
+                   popup = ~popup_label, 
+                   stroke=F,
+                   radius = 4,
+                   fillColor = "gray",
+                   fillOpacity = 1)
+```
+
+
+
+
+
 
 
 
