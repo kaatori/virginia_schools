@@ -13,6 +13,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 This analysis file is for my own curiosity in reviewing how schools in Fairfax County, VA performed pre- and post-pandemic for Grade 3 pass rates for English: Reading and Mathematics tests. 
 
+It does not seek to judge schools or address school ratings because there are too many other factors that go into what makes a good school. 
+
 
 
 ## Original public data source:
