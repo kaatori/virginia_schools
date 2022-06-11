@@ -1,6 +1,6 @@
 ---
 title: "Fairfax Schools, VA, USA"
-author: "Sperow, KC"
+author: "Cassandra Sperow"
 date: "6/2/2022"
 output: html_document
 ---
@@ -17,7 +17,7 @@ This analysis file is for my own curiosity in reviewing how schools in Fairfax C
 
 ## Original public data source:
 
-[Virginia Department of Education](https://www.doe.virginia.gov/statistics_reports/sol-pass-rates/index.shtml)
+[Virginia Department of Education SOL Test Results](https://www.doe.virginia.gov/statistics_reports/sol-pass-rates/index.shtml)
 
 
 ### Import Libraries
