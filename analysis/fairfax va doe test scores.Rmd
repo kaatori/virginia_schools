@@ -1,0 +1,313 @@
+---
+title: "Fairfax Schools, VA, USA"
+author: "Sperow, KC"
+date: "6/2/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Fairfax County, VA DOE SOL School Test Scores
+
+This analysis file is for my own curiosity in reviewing how schools in Fairfax County, VA performed pre- and post-pandemic for Grade 3 pass rates for English: Reading and Mathematics tests. 
+
+
+
+## Original public data source:
+
+[Virginia Department of Education](https://www.doe.virginia.gov/statistics_reports/sol-pass-rates/index.shtml)
+
+
+### Import Libraries
+```{r}
+library(tidyverse)
+```
+
+
+### Import Data
+```{r}
+schools <- read_csv("../data/2020-2021-school-test-by-test.csv", skip =2)
+
+schools %>% glimpse()
+
+```
+
+### Review of import problems
+```{r}
+# problem with parsing due to "<" entered into some fields of data
+# Reviewing the original data file, there are indeed these little carats for some pass rates
+schools$`2018-2019 Pass Rate` %>% unique()
+schools$`2018-2019 Pass Rate` %>% typeof()
+schools %>% filter(`2018-2019 Pass Rate`=="<")
+```
+
+### Setting import to include "<" as an NA value to fix problems from previous import
+```{r}
+# checking unique values for the column 'Sch Type'
+unique(schools$`Sch Type`)
+
+# setting the NA values to include "<" because there was not a value given or key for what the "<" indicates 
+schools %>% 
+  mutate(sch_type = parse_factor(`Sch Type`)) %>% 
+  mutate(pass_rate_18_19 = parse_integer(`2018-2019 Pass Rate`, na = c("", "NA", NA, "<"), trim_ws = TRUE), 
+         pass_rate_20_21 = parse_integer(`2020-2021 Pass Rate`, na = c("", "NA", NA, "<"), trim_ws = TRUE),
+         county = `Div Name`) -> schools
+  
+
+```
+
+# Filtering Data to Focus on Grade 3 Test Scores and Calculating a Percent Change from Pre-Pandemic
+```{r}
+schools %>% 
+  select(county, sch_type, `Sch Name`, Test, Grade, pass_rate_18_19, pass_rate_20_21) %>% 
+  filter(county=="Fairfax County") %>% 
+  filter(sch_type=="Elem") %>% 
+  filter(Grade=="Gr 3") %>% 
+  mutate(point_diff =  pass_rate_20_21 - pass_rate_18_19) %>% 
+  mutate(pct_change = (point_diff/pass_rate_18_19)*100) %>% 
+  mutate(Test = parse_factor(Test)) -> fair_elem_gr3_test_scores 
+
+fair_elem_gr3_test_scores %>% 
+  #schools with pass rate of at least 80
+  filter(pass_rate_20_21 >=80) %>% #glimpse()
+  # schools that did not go down more than 5 % after covid closures
+  filter(pct_change>=-5) -> fair_5schools
+  
+  
+```
+### How do the pass rates relate to the percent change in test scores post-pandemic? 
+```{r}
+fair_5schools %>% 
+  arrange(-pct_change) %>% 
+  ggplot(aes(x = pct_change, y = pass_rate_20_21, color = Test, fill = Test)) +
+  geom_point() +
+  facet_wrap(~Test) + 
+  ggtitle("Distribution of Pass Rates for Schools", subtitle = "with pass rate >= 80 and no lower than a 5 % decrease post-pandemic:")
+  
+```
+
+Interpretation: 
+- When test scores went up, they went up more for English: Reading than for Math. 
+- Schools that did not go down more than 5% (or that increased test scores at any level) had these things happen more so for English than in Math. 
+- Could this indicate that maybe it was easier for families to focus on reading during school closures than math?
+- Could this be why there are not as many of the same increases in math scores as students returned after school closures?
+
+
+
+### Top 10 Fairfax ELementary Schools with pass rate in '20-'21 of more than 80 and that also have a percent change of not less than -5%:
+
+- This list shows that the gains during the pandemic seem to be more in English than Math, which is also in the plot above showing more points for English scores than Math scores that fit the criteria of being above 80 and also not having fallen more than 5%
+```{r}
+fair_5schools %>% 
+  slice_max(pass_rate_20_21, n = 10, with_ties = TRUE) %>% 
+  summarise(`Sch Name`, Test, pass_rate_20_21, pct_change) 
+
+# to get the top 10 for English only
+fair_elem_gr3_test_scores %>% 
+  filter(Test=="English Reading") %>% 
+  slice_max(pct_change, n=10) %>% 
+  summarise(`Sch Name`)
+```
+
+### Top 10 schools for math after school closures by pass rate 18-19 > 80 and pct_change > -5 doesn't give enough data to have a top 10 for math
+```{r}
+# using the df with only the top scores no matter the test subject
+# does not give enough for math to have a Top 10
+fair_5schools %>% 
+  filter(Test=="Mathematics") %>% 
+  slice_max(pct_change, n=10) %>% 
+  summarise(`Sch Name`)
+
+# outputs Top 10 in Fairfax County when using the df 
+# for all Fairfax Co elementary schools
+fair_elem_gr3_test_scores %>% 
+  filter(Test=="Mathematics") %>% 
+   slice_max(pct_change, n=10, with_ties = TRUE) %>% 
+  summarise(`Sch Name`)
+```
+
+### Data Vizualization of Percent Changes in Test Scores
+
+```{r}
+# simple plot
+plot(x = fair_elem_gr3_test_scores$pct_change, main = "Percent Changes in Test Scores Post-Pandemic ", sub = "in Fairfax County Elementary Schools (2020-2021)", ylab = "Percent Change", xlab = "")
+```
+
+```{r}
+# distribution of percent change in test scores
+ggplot(data = fair_elem_gr3_test_scores, 
+       aes(x = Test, y = pct_change)) +
+  geom_boxplot(outlier.shape = "triangle", outlier.color = "red", notch = TRUE) +
+  ggtitle("Distribution of Percent Changes in Test Scores (2020-2021)", subtitle = "Fairfax County Schools, VA, USA") +
+  ylab("Percent Change") +
+  theme_bw()
+  
+```
+
+### Histogram of Test Scores by Test Subject
+
+```{r}
+# Histogram Views of Test Score Distributions by Test Subject
+fair_elem_gr3_test_scores %>% 
+  ggplot(aes(x = pct_change, color = Test, fill = Test)) +
+  geom_histogram(bins = 50) +
+  facet_wrap(~Test) +
+  theme_bw()
+```
+
+
+
+# Where are these schools geographically?
+
+This [site](https://stackoverflow.com/questions/9068941/obtain-latitude-and-longitude-from-address-without-the-use-of-google-api)  was helpful in deciding how to proceed to find a way to map the locations of schools from public data. 
+
+The Virginia Department of Education publishes school addresses on its website [here](https://www.doe.virginia.gov/directories/index.shtml)
+
+```{r}
+# public data from Virginia Dept of Education
+va_schools_addresses <- read_csv("../data/Public_School_report.csv", skip = 2)
+
+# selecting only the columns needed
+va_schools_addresses %>% 
+  select(`Division Name` , `School Name`, `Grade  Standard`, Address1:Zip) -> va_schools_addresses
+
+# tidying columns and creating one full address because geocode() requires this for finding latutude and longitude of a given address
+va_schools_addresses %>% 
+  rename(va_school_name = `School Name`) %>% 
+  filter(str_detect(`Division Name`, "Fairfax")) -> fairfax_school_addresses
+  
+```
+
+
+### Joining Test Score Data with Address Data
+```{r}
+# joining the addresses df with the test score df
+# note how the different joins can filter the rows of data
+# an inner_join is the best option
+fair_elem_gr3_test_scores %>% # 280 rows
+  arrange(`Sch Name`) %>% 
+  # semi = return all rows in first df with a match in 2nd df without columns in 2nd
+  # inner = return rows in x and y with columns from y === USE THIS ONE
+  inner_join(fairfax_school_addresses, by = c(`Sch Name`= "va_school_name")) -> fair_elem_gr3_test_scores # correct 280 rows
+
+```
+
+
+### Using ```ggmap``` and Google Geocode API
+
+####  Important:
+
+To use the ```ggmap``` library, as shown below, please read and review the terms of obtaining a Google Geocode API key [here](https://developers.google.com/maps/documentation/geocoding/get-api-key#:~:text=Go%20to%20the%20Google%20Maps%20Platform%20%3E%20Credentials%20page.&text=On%20the%20Credentials%20page%2C%20click,Click%20Close.)
+
+Please also read through how the ```ggmap``` package requires a Google API key [here](https://cran.r-project.org/web/packages/ggmap/readme/README.html). Google API keys have limits of usage unless you pay for how many requests are run in your code; therefore, use caution and keep track of how many requests your Google API key is logging through the [Google Cloud Platform](https://cloud.google.com).
+
+```{r}
+
+library(ggmap)
+library(keyring)
+
+
+# setting the API key to be hidden with keyring package
+# key_set("geo_google_api")
+
+# following directions to initialize the API key in the ggmap library
+# register_google(key = key_get("geo_google_api"))
+
+# test - do not run unless you have an API key
+#geocode("11375 Center Harbor Rd, Reston, VA 20194")
+```
+
+Useful site that helped in this analysis [here](https://stackoverflow.com/questions/158474/how-to-obtain-longitude-and-latitude-for-a-street-address-programmatically-and)
+
+### Do not run commented out code unless you have your own API key from Google Cloud Platform. 
+
+Below is the code for translating the physical address of each school into a latitude and longitude in order to plot on a map (geocoding): 
+```{r}
+# ## quick glimpse of the data
+# fair_elem_gr3_test_scores %>% #glimpse
+
+# ## creating one column of full address which is the main argument for the geocode() function
+#   unite(col = "full_address", Address1, Address2, City, State, Zip, sep = " ") %>%
+#   ## calling the API via ggmap library that now requires one to have already set up a Google Geocode API within Google Cloud Platform
+#   mutate(point_coords = geocode(full_address)) -> full_add_fair_elem
+# 
+
+# # writing results in rds file
+# write_rds(full_add_fair_elem, "./full_add_fair_elem.rds")
+```
+
+### Re-importing API Call Results from .rds file
+```{r}
+# note: do not re-run analysis file as it will call API and may log
+# too many requests under the free plan
+# therefore the API call was run just once above, checked, and 
+# written in rds for re-importing here every time this .Rmd is run
+full_add_fair_elem <- read_rds("../output/full_add_fair_elem.rds")
+
+# results of the API call are a column of tibbles
+# unnesting the column of tibbles from the API call
+full_add_fair_elem %>% unnest(point_coords) -> ll_df
+
+# checking
+#ll_df
+```
+
+### Creating Popup Labels in Data Frame Before Mapping
+```{r}
+# renaming columns so that leaflet or other map library recognizes them as latitude and longitude
+ll_df %>% 
+  mutate(latitude = lat, 
+         longtitude = lon) -> ll_df
+
+# writing finished file
+write_rds(ll_df, "../output/ll_df.rds")
+
+# using finished file from this point forward to map
+ll_df <- read_rds("../output/ll_df.rds")
+
+# creating popup label
+ll_df %>% 
+  mutate(popup_label = paste(paste0('<b>School Name: ', `Sch Name`, '</b>'),
+                             paste0('Address: ', full_address), 
+                             sep = '<br/>')) -> ll_df
+
+
+# checking data type before mapping
+typeof(ll_df)
+```
+
+### Building the Map in Leaflet
+
+For more information on how to build interactive maps in ```leaflet```, please visit this [site](https://leafletjs.com).
+
+```{r}
+
+library(leaflet)
+
+leaflet(data = ll_df) %>% 
+  addTiles() %>% 
+  setView(lng = -77.20, lat = 38.85, zoom = 10) %>% 
+  addCircleMarkers(lng = ll_df$longtitude, 
+                   lat = ll_df$latitude , 
+                   popup = ~popup_label, 
+                   stroke=F,
+                   radius = 4,
+                   fillColor = "gray",
+                   fillOpacity = 1)
+
+```
+
+
+
+
+
+Citation for use of ```ggmap``` with Google Geocode API: 
+
+D. Kahle and H. Wickham. ggmap: Spatial
+  Visualization with ggplot2. The R
+  Journal, 5(1), 144-161. URL
+  http://journal.r-project.org/archive/2013-1/kahle-wickham.pdf
+
+
