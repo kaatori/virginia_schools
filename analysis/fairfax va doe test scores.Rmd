@@ -45,11 +45,8 @@ schools$`2018-2019 Pass Rate` %>% typeof()
 schools %>% filter(`2018-2019 Pass Rate`=="<")
 ```
 
-### Setting import to include "<" as an NA value to fix problems from previous import
+### Mutating to include "<" as an NA value to fix problems from import
 ```{r}
-# checking unique values for the column 'Sch Type'
-unique(schools$`Sch Type`)
-
 # setting the NA values to include "<" because there was not a value given or key for what the "<" indicates 
 schools %>% 
   mutate(sch_type = parse_factor(`Sch Type`)) %>% 
@@ -57,7 +54,8 @@ schools %>%
          pass_rate_20_21 = parse_integer(`2020-2021 Pass Rate`, na = c("", "NA", NA, "<"), trim_ws = TRUE),
          county = `Div Name`) -> schools
   
-
+# checking to make sure they're all numbers
+filter(schools, is.character(pass_rate_20_21))
 ```
 
 # Filtering Data to Focus on Grade 3 Test Scores and Calculating a Percent Change from Pre-Pandemic

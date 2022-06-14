@@ -1,0 +1,145 @@
+---
+title: "Virginia Schools Pre- & Post-Pandemic"
+author: "Cassandra Sperow"
+date: '2022-06-14'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Exploration of Pre- & Post-Pandemic Pass Rate Scores from the Standards of Learning (SOL) Test Results of Schools in the State of Virginia, USA
+
+- A previous version of sorts for Fairfax County is also available in this repo. 
+
+- This analysis is for my own curiosity and should not be construed as anything extensive in regards to judging schools or judging how good a school may be. There are too many factors and circumstances that go into what makes a good school. 
+
+## Original public data source:
+
+[Virginia Department of Education SOL Test Results](https://www.doe.virginia.gov/statistics_reports/sol-pass-rates/index.shtml)
+
+
+
+
+### Import Libraries
+```{r}
+library(tidyverse)
+```
+
+
+### Import Data
+```{r}
+schools <- read_csv("../data/2020-2021-school-test-by-test.csv", skip =2)
+
+schools %>% head
+```
+
+### Checking columns where pass rate should have been a number
+
+```{r}
+# There is a "<" character that needs to be counted as NA
+schools$`2018-2019 Pass Rate` %>% unique()
+```
+
+
+### Mutating pass rate columns into number columns with new NA definition to include the character "<"
+
+- Also changing the school type column to a categorical variable and renaming it in one mutate()
+```{r}
+# setting the NA values to include "<" because there was not a value given or key for what the "<" indicates 
+schools %>% 
+  mutate(sch_type = parse_factor(`Sch Type`)) %>% 
+  mutate(pass_rate_18_19 = parse_integer(`2018-2019 Pass Rate`, 
+                                         na = c("", "NA", NA, "<"), 
+                                         trim_ws = TRUE), 
+         pass_rate_20_21 = parse_integer(`2020-2021 Pass Rate`, 
+                                         na = c("", "NA", NA, "<"), 
+                                         trim_ws = TRUE),
+         county = `Div Name`) -> schools
+  
+# checking to make sure they're all numbers
+filter(schools, is.character(pass_rate_20_21))
+```
+### Calculating a Percent Change between school year 2018-2019 and 2020-2021. 
+
+Note: Schools in Virginia did not post any data for the school year 2019-2020. 
+
+```{r}
+schools %>% 
+  # selecting necessary columns rather than whole dataset
+  select(county, sch_type, `Sch Name`, Test, Grade, pass_rate_18_19, pass_rate_20_21) %>% 
+  # calculating point difference between pre- and post-pandemic
+  mutate(point_diff =  pass_rate_20_21 - pass_rate_18_19) %>% 
+  # creating percent change column
+  mutate(pct_change = (point_diff/pass_rate_18_19)*100) %>% 
+  # changing into categorical variable
+  mutate(Test = parse_factor(Test)) -> schools
+
+schools %>% glimpse()
+```
+
+## Basic Descriptive Stats
+
+- How many unique schools?
+```{r}
+schools %>% 
+  summarise(`Sch Name`) %>%  
+  unique() %>% 
+  nrow
+```
+
+- How many county/city school districts within the State of Virginia?
+```{r}
+schools %>% 
+  summarise(county) %>% 
+  unique() %>% 
+  nrow()
+```
+
+- How many schools per district? Which one has the most schools (ie, the largest)?
+```{r}
+schools %>% 
+  group_by(county, `Sch Name`) %>% 
+  summarise(county, `Sch Name`) %>% 
+  unique() %>% 
+  group_by(county) %>% 
+  summarise(count = n()) %>% 
+  arrange(-count)
+```
+
+
+
+- What are the categories of schools?
+```{r}
+schools %>% 
+  summarise(sch_type) %>%  
+  unique()
+```
+
+
+- What are the Test categories?
+
+```{r}
+schools$Test %>% levels()
+```
+
+
+### Distribution of 2018-2019 Pass Rates for All Schools
+```{r}
+schools %>% 
+  ggplot(aes(x = pass_rate_18_19, y = Test)) +
+  geom_boxplot(outlier.shape = "triangle", outlier.color = "red") + 
+  theme_bw() +
+  stat_summary(fun = mean, color = "red") + 
+  ggtitle("Pass Rates per Subject Area for Schools in Virginia, USA", 
+          subtitle = "for the school year 2018-2019")
+```
+
+Key: 
+
+- The triangles are considered outliers. 
+- The circles represent the mean (average) pass rate for that test subject area for the whole State of Virginia.
+- The black lines inside each boxplot indicate the median pass rate.
+
+
