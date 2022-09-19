@@ -1,7 +1,7 @@
 ---
 title: "Virginia Schools Pre- & Post-Pandemic"
 author: "Cassandra Sperow"
-date: '2022-06-14'
+date: 'Updated 9-18-2022'
 output: html_document
 ---
 
@@ -30,16 +30,17 @@ library(tidyverse)
 
 ### Import Data
 ```{r}
-schools <- read_csv("../data/2020-2021-school-test-by-test.csv", skip =2)
+schools_raw <- read_csv("../data/2020-2021-school-test-by-test.csv", skip =2)
 
-schools %>% head
+schools_raw %>% head
+nrow(schools_raw) # 14,381
 ```
 
 ### Checking columns where pass rate should have been a number
 
 ```{r}
 # There is a "<" character that needs to be counted as NA
-schools$`2018-2019 Pass Rate` %>% unique()
+schools_raw$`2018-2019 Pass Rate` %>% unique()
 ```
 
 
@@ -48,7 +49,7 @@ schools$`2018-2019 Pass Rate` %>% unique()
 - Also changing the school type column to a categorical variable and renaming it in one mutate()
 ```{r}
 # setting the NA values to include "<" because there was not a value given or key for what the "<" indicates 
-schools %>% 
+schools_raw %>% 
   mutate(sch_type = parse_factor(`Sch Type`)) %>% 
   mutate(pass_rate_18_19 = parse_integer(`2018-2019 Pass Rate`, 
                                          na = c("", "NA", NA, "<"), 
@@ -63,7 +64,7 @@ filter(schools, is.character(pass_rate_20_21))
 ```
 ### Calculating a Percent Change between school year 2018-2019 and 2020-2021. 
 
-Note: Schools in Virginia did not post any data for the school year 2019-2020. 
+Note: The Virginia Department of Education did not post any state assessment data for the school year 2019-2020 due to the cancellation of state assessments during the COVID-19 pandemic. See [here](https://doe.virginia.gov/statistics_reports/sol-pass-rates/index.shtml).
 
 ```{r}
 schools %>% 
