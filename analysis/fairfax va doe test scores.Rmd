@@ -294,7 +294,7 @@ leaflet(data = ll_df) %>%
                    popup = ~popup_label, 
                    stroke=F,
                    radius = 4,
-                   fillColor = "gray",
+                   fillColor = "blue",
                    fillOpacity = 1)
 
 ```
@@ -330,7 +330,7 @@ leaflet(data = top_ll_df) %>%
                    popup = ~popup_label, 
                    stroke=F,
                    radius = 4,
-                   fillColor = "gray",
+                   fillColor = "green",
                    fillOpacity = 1)
 ```
 
