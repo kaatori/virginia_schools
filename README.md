@@ -2,6 +2,8 @@
 
 An exploration into Virginia Department of Education public data on testing scores pre- and post-pandemic with a focus on Fairfax County elementary schools and Grade 3 test scores. 
 
+This is not meant to be an exhaustive analysis.
+
 Author: Cassandra Sperow
 
 I am constantly improving this repo. If you have questions, please email ks3288a@student.american.edu. 

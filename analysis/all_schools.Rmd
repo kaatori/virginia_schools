@@ -15,9 +15,11 @@ knitr::opts_chunk$set(echo = TRUE)
 
 - This analysis is for my own curiosity and should not be construed as anything extensive in regards to judging schools or judging how good a school may be. There are too many factors and circumstances that go into what makes a good school. 
 
+
 ## Original public data source:
 
 [Virginia Department of Education SOL Test Results](https://www.doe.virginia.gov/statistics_reports/sol-pass-rates/index.shtml)
+
 
 
 
