@@ -8,7 +8,6 @@ Author: Cassandra Sperow
 
 I am constantly improving this repo. If you have questions, please email ks3288a@student.american.edu. 
 
-RPubs link to the main analysis file with the leaflet map [here](https://rpubs.com/kaatori/Fairfax_county_schools)
 
 ## Data Sources: 
 
