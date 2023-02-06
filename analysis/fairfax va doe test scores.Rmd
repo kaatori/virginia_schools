@@ -316,7 +316,7 @@ top_ll_df %>%
   slice_max(pct_change, n=5)
 ```
 
-# Revised Map of Schools 
+# Revised Map of Schools  
 
 Goal: To see where the top performers are located in terms of district area within Fairfax County
 ```{r}
